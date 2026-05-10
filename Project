@@ -1,1 +1,105 @@
+/* 
+ 
+File:   main.cpp
+Author: Fraser Barrett.
+Created on May 2, 2026, 5:51 PM
+Purpose: */
 
+//System Libraries
+#include <cstdlib>
+#include <iomanip>
+#include <iostream>
+#include <cmath>
+#include <cstring>
+using namespace std;
+
+//User Libraries
+
+//Global Constants only
+
+//Conversions/Math/Physics
+
+//Structures
+struct Card {
+    char names[20];        //Character array for card name
+    int value;          //Card value
+};
+
+struct Deck {
+    Card cards[52];     //Array for storing card objects
+    int top;            //Index for card count, starts 0, increments each time card is dealt
+};
+
+struct Hand {
+    Card hand[10];      //Array for storinf card objects in hand
+    int nCards;         //Number of cards in hand
+    int totVal;         //Total value of hand.
+};
+
+//Function Prototypes
+void initDeck(Deck *);
+void shuffle(Deck *);
+void deal(Deck *, Hand *);
+
+//Execution Begins here
+int main(int argc, char** argv) {
+    //Set Random Number Seed Here
+
+    //Declare Variables
+//Initialize Variables
+    Deck *deck =  new Deck;
+    //Process Inputs Here
+    cout << "Standard deck:" << endl;
+    initDeck(deck);
+    for(int i = 0; i < 52; i++) {
+        cout << deck->cards[i].names << ", " << deck->cards[i].value << endl;
+    }
+    shuffle(deck);
+    cout << "Shuffled:" << endl;
+    for(int i = 0; i < 52; i++) {
+        cout << deck->cards[i].names << ", " << deck->cards[i].value << endl;
+    }
+    Hand *player = new Hand;
+    Hand *dealer = new Hand;
+   deal(deck, player); 
+   deal(deck, player);
+   deal(deck, dealer);
+   deal(deck, dealer);
+    //Display Results
+
+    //Exit Program
+    return 0;
+}
+
+void initDeck (Deck *deck) {
+    string suits[] = {"Hearts", "Diamonds", "Spades", "Clubs"};
+    string ranks[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10",
+                      "Jack", "Queen", "King", "Ace"};
+    int values[] = {2,3,4,5,6,7,8,9,10,10,10,10,11};
+
+    int idx = 0;    //Index for count
+    for(int s = 0; s < 4; s++) {
+        for(int r = 0; r < 13; r++) {
+            string flName = ranks[r] + " of " + suits[s];
+            strcpy(deck->cards[idx].names, flName.c_str());
+            deck->cards[idx].value = values[r];
+            idx++;
+        }
+    }
+    deck->top = 0;
+}
+
+void shuffle(Deck *deck) {
+    srand(time(0));
+    for(int i = 51; i > 0; i--){
+        int j = rand() % (i + 1);
+        Card temp = deck->cards[i];
+        deck->cards[i] = deck->cards[j];
+        deck->cards[j] = temp;
+    }
+    deck->top = 0;
+}
+
+void deal(Deck *deck, Hand *hand) {
+    
+}
