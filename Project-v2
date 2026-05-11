@@ -42,37 +42,25 @@ void shuffle(Deck *);
 void initHand(Hand *);
 void deal(Deck *, Hand *);
 void prntHnd(Hand *);
+void play(char );
+void rules();
 
 //Execution Begins here
 int main(int argc, char** argv) {
-    //Set Random Number Seed Here
+    char name[20];          //Player name
+    int choice;             //Menu choice
 
-    //Declare Variables
-//Initialize Variables
-    Deck *deck =  new Deck;
-    int bet = 0;
-    //Process Inputs Here
-    initDeck(deck); //Initialize Deck
-    shuffle(deck);  //Shuffle deck
-    Hand *player = new Hand;    //Pointer for players hand
-    Hand *dealer = new Hand;    //Pointer for dealers hand
-    //Initialize Hands
-    initHand(player);
-    initHand(dealer);
-    //Deal 2 cards to player and dealer.
-    deal(deck, player); 
-    deal(deck, player);
-    deal(deck, dealer);
-    deal(deck, dealer);
     do {
-        cout << "Place your bet ($10-$500): ";
-        cin >> bet;
-        cout << endl;
-    } while( bet < 10 || bet > 500);
-    
-    //Display Results
-
-    //Exit Program
+        cout << "Black-Jack!" << endl;
+        cout << "1. Start Game" << endl;
+        cout << "2. Rules" << endl;
+        cout << "3. Quit" << endl;
+        cin >> choice;
+        switch(choice) {
+            case 1: play(name); break;
+            case 2: rules(); break;
+        }
+    } while(choice != 3);
     return 0;
 }
 
@@ -91,7 +79,6 @@ void initDeck (Deck *deck) {
             idx++;
         }
     }
-    deck->top = 0;
 }
 
 void shuffle(Deck *deck) {
@@ -122,4 +109,99 @@ void prntHnd(Hand *hand) {
         cout << hand->hand[i].names << ", " << hand->hand[i].value << endl;
     }
     cout << hand->totVal << endl;
+}
+
+void play(char name[]) {
+    //Initialization
+    Deck *deck = new Deck;
+    Hand *player = new Hand;
+    Hand *dealer = new Hand;
+    initDeck(deck);
+    shuffle(deck);
+    //Declare variables
+    char choice;                    //Choice variabble for hit/stand loop
+    int balance = 2500;             //Starting balance for player in Dollars ($)
+    int bet;                        //Players bet, $10-$500
+    //Player name input
+    cout << "Enter your name: ";
+    cin.getline(name, 20);
+    cout << endl;
+    //Welcome message
+    cout << "Welcome, " << name <<"! Your starting balance is $" << balance << endl;
+    cout << "Game start!" << endl;
+    //Game loop
+    do {
+        bool rndOver = false;            //Round Over: Boolean flag for exiting nested loops early
+        //re-shuffle condition
+        if(deck->top > 45) {
+            cout << "Reshuffling Deck" << endl;
+            initDeck(deck);
+            shuffle(deck);
+        }
+        do {
+            cout << "Place your bet ($10-$500): $";
+            cin >> bet;
+        } while(bet > 10 || bet < 500);
+        //Deal
+        deal(deck, player);
+        deal(deck, dealer);
+        deal(deck, player);
+        deal(deck, dealer);
+        //Print dealer hand
+        cout << "Dealer shows: " << dealer->hand[0].names << " (" << 
+        dealer->hand[0].value << ") " << endl;
+        cout << "Dealers second card is face down" << endl;
+        //Print player hand
+        cout << "Your hand: " << endl;
+        prntHnd(player);
+        //Check for blackjack
+        if(player->totVal == 21) {
+                cout << "Black Jack!" << endl;
+                cout << "You win $" << bet*2.5 << endl;
+                balance =+ (bet)*(1.5);
+                cout << "New balance: $" << balance << endl;
+                rndOver = true;
+            }
+        //Hit-Stand loop
+        do {
+            cout << "Hit or Stand? (h/s): ";
+            cin >> choice;
+            if(choice == 'h') {
+                deal(deck, player);
+                prntHnd(player);
+            }
+        } while(choice == 's' && player->totVal <= 21);
+        //Check for bust
+        if(player->totVal > 21) {
+            cout << "Bust! You lose $" << bet << endl;
+            balance -= bet;
+            rndOver = true;
+        }
+        //Dealer logic 
+        if(!rndOver) {
+            //Print Dealer hand
+            cout << "Dealers hand: ";
+            prntHnd(dealer);
+            //Dealer draws till 17+
+            while(dealer->totVal < 17) {
+                cout << "Dealer hits" << endl;
+                deal(deck, dealer);
+                prntHnd(dealer);
+            }
+            //Check for bust out
+            if(dealer->totVal > 21) {
+            cout << "Bust! You win $" << bet << endl;
+            balance += bet;
+            rndOver = true;
+            } else if (player->totVal > dealer->totVal) {
+                cout << "You win $" << bet << endl;
+                balance += bet;
+            } else if (player->totVal > dealer->totVal) {
+                cout << "Dealer wins! You lose $" << bet << endl;
+                balance -= bet;
+            } else {
+                cout << "Push! Bet returned." << endl;
+            }
+        }
+    } while(balance >= 10);
 }
