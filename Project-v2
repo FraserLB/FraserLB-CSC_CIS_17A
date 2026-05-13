@@ -11,6 +11,7 @@ Purpose: */
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <fstream>
 using namespace std;
 
 //User Libraries
@@ -34,6 +35,7 @@ struct Hand {
     Card hand[10];      //Array for storinf card objects in hand
     int nCards;         //Number of cards in hand
     int totVal;         //Total value of hand.
+    int ace;            //Counter for detecting aces in a hand.
 };
 
 //Function Prototypes
@@ -44,6 +46,7 @@ void deal(Deck *, Hand *);
 void prntHnd(Hand *);
 void play(char );
 void rules();
+void save(char , int);
 
 //Execution Begins here
 int main(int argc, char** argv) {
@@ -95,13 +98,26 @@ void shuffle(Deck *deck) {
 void initHand(Hand *hand) {
     hand->nCards = 0;
     hand->totVal = 0;
+    hand->ace = 0;
 }
 
 void deal(Deck *deck, Hand *hand) {
+    //Deal card
     hand->hand[hand->nCards] = deck->cards[deck->top];
+    //Adjust value of hand
     hand->totVal += deck->cards[deck->top].value;
+    //Check for an ace
+    if(hand->hand[hand->nCards].value == 11) {
+        hand->ace++;
+    }
+    //Increment
     deck->top++;
     hand->nCards++;
+    //Adjust for aces
+    if(hand->totVal > 21 && hand->ace > 0) {
+        hand->totVal -= 10;
+        hand->ace--;
+    }
 }
 
 void prntHnd(Hand *hand) {
@@ -157,20 +173,25 @@ void play(char name[]) {
         //Check for blackjack
         if(player->totVal == 21) {
                 cout << "Black Jack!" << endl;
-                cout << "You win $" << bet*2.5 << endl;
+                cout << "You win $" << bet*1.5 << endl;
                 balance =+ (bet)*(1.5);
                 cout << "New balance: $" << balance << endl;
                 rndOver = true;
             }
         //Hit-Stand loop
         do {
-            cout << "Hit or Stand? (h/s): ";
+            cout << "Hit (h), Stand (s), or Save and Quit (q): ";
             cin >> choice;
             if(choice == 'h') {
                 deal(deck, player);
                 prntHnd(player);
             }
-        } while(choice == 's' && player->totVal <= 21);
+        } while(choice != 's' && choice != 'q' && player->totVal <= 21);
+        //Save and Quit
+        if(choice == 'q') {
+            save(*name, balance);
+            rndOver = true;
+        }
         //Check for bust
         if(player->totVal > 21) {
             cout << "Bust! You lose $" << bet << endl;
@@ -204,4 +225,12 @@ void play(char name[]) {
             }
         }
     } while(balance >= 10);
+}
+
+void save(char name[], int balance) {
+    ofstream file("save.data", ios::binary);
+    file.write(reinterpret_cast<char*>(name), 20);
+    file.write(reinterpret_cast<char*>(&balance), sizeof(int));
+    file.close();
+    cout << "Game Saved!" << endl;
 }
