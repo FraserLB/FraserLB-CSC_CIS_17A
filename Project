@@ -11,6 +11,8 @@ Purpose: */
 #include <iostream>
 #include <cmath>
 #include <cstring>
+#include <fstream>
+#include <string>
 using namespace std;
 
 //User Libraries
@@ -34,40 +36,74 @@ struct Hand {
     Card hand[10];      //Array for storinf card objects in hand
     int nCards;         //Number of cards in hand
     int totVal;         //Total value of hand.
+    int ace;            //Counter for detecting aces in a hand.
 };
+
+struct Record {
+    char name[20];      //Character array for storing name
+    int balance;        //For storing balance
+};
+
+//Enumerations
+enum gmState {PLAYING, GAMEOVER, SAVED, RNDOVER};
 
 //Function Prototypes
 void initDeck(Deck *);
 void shuffle(Deck *);
+void initHand(Hand *);
 void deal(Deck *, Hand *);
+void prntHnd(Hand *);
+void play(char [], int &);
+void rules();
+void save(char [], int);
+void saveRec(char [], int);
+void viewRec();
+bool load(char [], int &);
 
 //Execution Begins here
 int main(int argc, char** argv) {
-    //Set Random Number Seed Here
+    char name[20];          //Player name
+    int balance = 2500;     //Starting balance for player in Dollars ($)
+    int choice;             //Menu choice
 
-    //Declare Variables
-//Initialize Variables
-    Deck *deck =  new Deck;
-    //Process Inputs Here
-    cout << "Standard deck:" << endl;
-    initDeck(deck);
-    for(int i = 0; i < 52; i++) {
-        cout << deck->cards[i].names << ", " << deck->cards[i].value << endl;
-    }
-    shuffle(deck);
-    cout << "Shuffled:" << endl;
-    for(int i = 0; i < 52; i++) {
-        cout << deck->cards[i].names << ", " << deck->cards[i].value << endl;
-    }
-    Hand *player = new Hand;
-    Hand *dealer = new Hand;
-   deal(deck, player); 
-   deal(deck, player);
-   deal(deck, dealer);
-   deal(deck, dealer);
-    //Display Results
-
-    //Exit Program
+    do {
+        cout << "Black-Jack!" << endl;
+        cout << "1. Start Game" << endl;
+        cout << "2. Load Game" << endl;
+        cout << "3. Rules" << endl;
+        cout << "4. High Scores" << endl;
+        cout << "5. Quit" << endl;
+        cin >> choice;
+        switch(choice) {
+            case 1: {
+                //Player name input
+                cout << "Enter your name: ";
+                cin.ignore();
+                cin.getline(name, 20);
+                cout << endl;
+                //Welcome message
+                cout << "Welcome, " << name <<"! Your starting balance is $" << balance << endl;
+                cout << "Game start!" << endl; 
+                play(name, balance); 
+                break;
+            }
+            case 2: {
+                bool loaded = load(name, balance);
+                if(loaded) {
+                    play(name, balance);
+                }
+                break;
+            }
+            case 3: {
+                rules();
+                break;
+            } 
+            case 4: {
+                viewRec();
+                break;
+            }
+        }
+    } while(choice != 5);
     return 0;
 }
 
@@ -86,7 +122,6 @@ void initDeck (Deck *deck) {
             idx++;
         }
     }
-    deck->top = 0;
 }
 
 void shuffle(Deck *deck) {
@@ -100,6 +135,252 @@ void shuffle(Deck *deck) {
     deck->top = 0;
 }
 
+void initHand(Hand *hand) {
+    hand->nCards = 0;
+    hand->totVal = 0;
+    hand->ace = 0;
+}
+
 void deal(Deck *deck, Hand *hand) {
-    
+    //Deal card
+    hand->hand[hand->nCards] = deck->cards[deck->top];
+    //Adjust value of hand
+    hand->totVal += deck->cards[deck->top].value;
+    //Check for an ace
+    if(hand->hand[hand->nCards].value == 11) {
+        hand->ace++;
+    }
+    //Increment
+    deck->top++;
+    hand->nCards++;
+    //Adjust for aces
+    if(hand->totVal > 21 && hand->ace > 0) {
+        hand->totVal -= 10;
+        hand->ace--;
+    }
+}
+
+void prntHnd(Hand *hand) {
+    for(int i = 0; i < hand->nCards; i++) {
+        cout << hand->hand[i].names << ", " << hand->hand[i].value << endl;
+    }
+    cout << hand->totVal << endl;
+}
+
+void play(char name[], int &balance) {
+    cout << fixed << setprecision(2);
+    //Initialization
+    Deck *deck = new Deck;
+    Hand *player = new Hand;
+    Hand *dealer = new Hand;
+    initDeck(deck);
+    shuffle(deck);
+    //Declare variables
+    char choice = ' ';                    //Choice variabble for hit/stand loop
+    int bet;                               //Players bet, $10-$500
+    gmState state;
+    //Game loop
+    do {
+        state = PLAYING;
+        //re-shuffle condition
+        if(deck->top > 45) {
+            cout << "Reshuffling Deck" << endl;
+            initDeck(deck);
+            shuffle(deck);
+        }
+        //Initiate Hand
+        initHand(player);
+        initHand(dealer);
+        //Place bet
+        do {
+            cout << "Place your bet ($10-$500): $";
+            cin >> bet;
+            if(bet == 0) {
+                save(name, balance);
+                delete deck;
+                delete player;
+                delete dealer;
+                return;     //exit
+            }
+            if(bet > balance) {
+                cout <<"You cannot bet more than your balance of $" << balance << "!" << endl;
+            }
+        } while(bet < 10 || bet > 500 || bet > balance);
+        //Deal
+        deal(deck, player);
+        deal(deck, dealer);
+        deal(deck, player);
+        deal(deck, dealer);
+        //Print dealer hand
+        cout << endl;
+        cout << "-----------------------------------------BLACKJACK-----------------------------------------" << endl;
+        cout << endl;
+        cout << "Dealer shows: " << dealer->hand[0].names << " (" << 
+        dealer->hand[0].value << ") " << endl;
+        cout << "Dealers second card is face down" << endl;
+        //Print player hand
+        cout << endl;
+        cout << "Your hand: " << endl;
+        prntHnd(player);
+        cout << endl;
+        //Check for blackjack
+        if(player->totVal == 21) {
+                cout << "Black Jack!" << endl;
+                cout << "You win $" << bet*1.5 << endl;
+                balance += (bet)*(1.5);
+                cout << "New balance: $" << balance << endl;
+                state = RNDOVER;
+            }
+        if(state == PLAYING) {
+            //Hit-Stand loop
+        do {
+            cout << "Hit (h), Stand (s), or Save and Quit (q): ";
+            cin >> choice;
+            if(choice == 'h') {
+                deal(deck, player);
+                cout << "Your hand:" << endl;
+                prntHnd(player);
+            }
+        } while(choice != 's' && choice != 'q' && player->totVal <= 21);
+        }
+        //Save and Quit
+        if(choice == 'q') {
+            save(name, balance);
+            saveRec(name, balance);
+            state = SAVED;
+        }
+        //Check for bust
+        if(player->totVal > 21) {
+            cout << "Bust! You lose $" << bet << endl;
+            cout << endl;
+            balance -= bet;
+            state = RNDOVER;
+        }
+        //Dealer logic 
+        if(state == PLAYING) {
+            //Print Dealer hand
+            cout << endl;
+            cout << "Dealers hand: " << endl;
+            prntHnd(dealer);
+            cout << endl;
+            //Dealer draws till 17+
+            while(dealer->totVal < 17) {
+                cout << "Dealer hits" << endl;
+                cout << endl;
+                deal(deck, dealer);
+                prntHnd(dealer);
+                cout << endl;
+            }
+            //Check for bust out
+            if(dealer->totVal > 21) {
+            cout << "Bust! You win $" << bet << endl;
+            balance += bet;
+            state = RNDOVER;
+            } else if (player->totVal > dealer->totVal) {
+                cout << "You win $" << bet << endl;
+                balance += bet;
+            } else if (player->totVal < dealer->totVal) {
+                cout << "Dealer wins! You lose $" << bet << endl;
+                balance -= bet;
+            } else {
+                cout << "Push! Bet returned." << endl;
+            }
+        }
+        cout << endl;
+        cout << "Current balance: $" << balance << endl;
+        if(balance < 10) {
+            state = GAMEOVER;
+        }
+    } while(state == PLAYING || state == RNDOVER);
+    if(state == GAMEOVER) {
+        cout << endl;
+        cout << "Out of money!" << endl;
+        cout << "Game over!" << endl;
+        cout << endl;
+    }
+    delete deck;
+    delete player;
+    delete dealer;
+}
+
+void save(char name[], int balance) {
+    ofstream file("save.data", ios::binary);
+    file.write(reinterpret_cast<char*>(name), 20);
+    file.write(reinterpret_cast<char*>(&balance), sizeof(int));
+    file.close();
+    cout << "Game Saved!" << endl;
+}
+
+bool load(char name[], int &balance) {
+    ifstream file("save.data", ios::binary);
+    if(!file) {
+        cout << endl;
+        cout << "No save file found!" << endl;
+        cout << endl;
+        return false;
+    }
+    file.read(reinterpret_cast<char*>(name), 20);
+    file.read(reinterpret_cast<char*>(&balance), sizeof(int));
+    file.close();
+    cout << "Game loaded." << endl;
+    cout << "Welcome back " << name << "!" << endl;
+    cout << "Balance: $"  << fixed << setprecision(2) << balance << endl;
+    return true;
+}
+
+void rules() {
+    cout << "-----------------------------------------BLACKJACK-----------------------------------------" << endl;
+    cout << endl;
+    cout << "Rules:" << endl;
+    cout << "Every turn the player will recieve two face up cards while the dealer ";  
+    cout << "recieves one card up and one card down." << endl;
+    cout << "Number cards are counted at their face value, face cards as 10, ";
+    cout << "and Aces as 1 or 11." << endl;
+    cout << "Each turn, the player has the option to hit or stand." << endl;
+    cout << "The player may draw as many times as they like, so long as their "; 
+    cout << "hands value is not greater than 21." << endl;
+    cout << "If the player hits, they will recieve another card. If they stand, ";
+    cout << "the dealer reveals their other card." << endl;
+    cout << "The dealer must always draw till his hand is worth 17 or more, ";
+    cout << "regardless of the player's hand's value." << endl;
+    cout << "If after drawing the dealers hand is still worth less than the players, ";
+    cout << "or greater than 21, the player wins." << endl;
+    cout << "If the players hand is worth less than the dealers, and the dealer ";
+    cout << "is not required to hit, the dealer wins." << endl;
+    cout << "A BlackJack, a starting hand of 21, results in an automatic win for the player ";
+    cout << "and pays 1.5 times his bet." << endl;
+    cout << "A tie results in a push. the players bet is returned." << endl;
+    cout << "You may save and quit during your turn by selecting 'q'." << endl;
+    cout << endl;
+    cout << "-------------------------------------------------------------------------------------------" << endl;
+}
+
+void saveRec(char name[], int balance) {
+    fstream file("scores.data", ios::binary | ios::in | ios::out | ios::app);
+    //Create file
+    if(!file) {
+        file.open("scores.data", ios::binary | ios::out);
+    }
+    Record rec;
+    strcpy(rec.name, name);
+    rec.balance = balance;
+    file.seekp(0, ios::end);
+    file.write(reinterpret_cast<char*>(&rec), sizeof(Record));
+    file.close();
+}
+
+void viewRec() {
+    ifstream file("scores.data", ios::binary);
+    if(!file) {
+        cout << "No Records found!" << endl;
+        return;
+    }
+    Record rec;
+    int spot = 0;
+    cout << "High Scores: " << endl;
+    while(file.read(reinterpret_cast<char*>(&rec), sizeof(Record))) {
+        cout << spot + 1 << ". " << rec.name << " - $" << fixed << setprecision(1) << rec.balance << endl;
+        spot++;
+    }
+    file.close();
 }
