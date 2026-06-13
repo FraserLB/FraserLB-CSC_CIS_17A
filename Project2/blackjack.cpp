@@ -15,20 +15,22 @@ Purpose: */
 #include <string>
 #include "Card.h"
 #include "Deck.h"
+#include "Hand.h"
 using namespace std;
 
 //Execution Begins here
 int main(int argc, char** argv) {
-    Card c1("Ace of Spades", 11);
-    Card c2("Five of Hearts", 5);
-    cout << c1.getName() << " = " << c1.getValue() << endl;
-    cout << c2.getName() << " = " << c2.getValue() << endl;
-    if (c1 > c2) cout << c1.getName() << " is higher" << endl;
     Deck deck;
     deck.shuffle();
-    for(int i = 0; i < 5; i++) {
-        Card c = deck.deal();
+
+    Hand player;
+    player.addCard(deck.deal());
+    player.addCard(deck.deal());
+
+    for(int i = 0; i < player.getCount(); i++) {
+        Card c = player.getCard(i);
         cout << c.getName() << " (" << c.getValue() << ")" << endl;
     }
+    cout << "Total: " << player.getTotal() << endl;
     return 0;
 }
