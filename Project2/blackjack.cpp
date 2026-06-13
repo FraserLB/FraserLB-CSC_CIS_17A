@@ -13,9 +13,9 @@ Purpose: */
 #include <cstring>
 #include <fstream>
 #include <string>
-#include "Card.h"
 #include "Deck.h"
-#include "Hand.h"
+#include "Dealer.h"
+#include "HumanPlayer.h"
 using namespace std;
 
 //Execution Begins here
@@ -23,14 +23,20 @@ int main(int argc, char** argv) {
     Deck deck;
     deck.shuffle();
 
-    Hand player;
-    player.addCard(deck.deal());
-    player.addCard(deck.deal());
+    HumanPlayer player("Fraser");
+    Dealer dealer;
 
-    for(int i = 0; i < player.getCount(); i++) {
-        Card c = player.getCard(i);
-        cout << c.getName() << " (" << c.getValue() << ")" << endl;
-    }
-    cout << "Total: " << player.getTotal() << endl;
+    player.addCard(deck.deal());
+    player.addCard(deck.deal());
+    dealer.addCard(deck.deal());
+    dealer.addCard(deck.deal());
+
+    cout << player.getName() << " starting total: " << player.getTotal() << endl;
+    player.playTurn(deck);                 
+    cout << "Final total: " << player.getTotal() << endl;
+
+    cout << "Dealer plays..." << endl;
+    dealer.playTurn(deck);                  
+    cout << "Dealer total: " << dealer.getTotal() << endl;
     return 0;
 }
