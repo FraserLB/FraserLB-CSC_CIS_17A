@@ -16,27 +16,45 @@ Purpose: */
 #include "Deck.h"
 #include "Dealer.h"
 #include "HumanPlayer.h"
+#include "BadBet.h"
 using namespace std;
 
 //Execution Begins here
 int main(int argc, char** argv) {
+    //Variable Declarations
     Deck deck;
     deck.shuffle();
-
+    //Initialize player and dealer
     HumanPlayer player("Fraser");
     Dealer dealer;
-
-    player.addCard(deck.deal());
+    //1. Deal two cards to player and dealer
     player.addCard(deck.deal());
     dealer.addCard(deck.deal());
+    player.addCard(deck.deal());
     dealer.addCard(deck.deal());
+    //2. Show Dealer's hand
+    cout << "Dealer shows: " << dealer.getCard(0).getName() << " (" << dealer.getCard(0).getValue() << ")" << endl;
+    cout << "Dealers other card is face down." << endl;
+    //3. Show players hand
+    cout << "Your hand: " << endl;
+    for(int i = 0; i < player.getCount(); i++) {
+        Card c = player.getCard(i);
+        cout << c.getName() << " (" << c.getValue() << ")" << endl;
+    }
+    cout << "Total: " << player.getTotal() << endl;
+    //4. Hit stand loop
+    player.playTurn(deck);
+    //5. Dealer draws to 17
+    dealer.playTurn(deck);
+    //Display Dealers hand
+    cout << "Dealers full hand: " << endl;
+    for(int i = 0; i < dealer.getCount(); i++) {
+        cout << dealer.getCard(i).getName() << " (" << dealer.getCard(i).getValue() << ")" << endl;
+    }
+    cout << "Dealer's total: " << dealer.getTotal() << endl;
+ 
 
-    cout << player.getName() << " starting total: " << player.getTotal() << endl;
-    player.playTurn(deck);                 
-    cout << "Final total: " << player.getTotal() << endl;
 
-    cout << "Dealer plays..." << endl;
-    dealer.playTurn(deck);                  
-    cout << "Dealer total: " << dealer.getTotal() << endl;
+    
     return 0;
 }
