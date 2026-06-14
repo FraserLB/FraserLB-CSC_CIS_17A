@@ -12,6 +12,14 @@ int Player::getTotal() {
     return hand.getTotal();
 }
 
+int Player::getCount() {
+    return hand.getCount();
+}
+
 string Player::getName() {
     return name;
+}
+
+Card Player::getCard(int i) {
+    return hand.getCard(i);
 }
